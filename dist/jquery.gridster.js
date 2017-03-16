@@ -2471,7 +2471,7 @@
 					'left': '',
 					'top': ''
 				});
-				
+
 		if (this.options.draggable.stop) {
 			this.options.draggable.stop.call(this, event, ui);
 		}
@@ -2514,9 +2514,13 @@
 		this.resize_last_sizex = this.resize_initial_sizex;
 		this.resize_last_sizey = this.resize_initial_sizey;
 
+		this.resize_initial_row = this.resize_coords.grid.row;
+
+
 		this.resize_max_size_x = Math.min(this.resize_wgd.max_size_x || this.options.resize.max_size[0],
 				this.options.max_cols - this.resize_initial_col + 1);
-		this.resize_max_size_y = this.resize_wgd.max_size_y || this.options.resize.max_size[1];
+		this.resize_max_size_y = Math.min(this.resize_wgd.max_size_y || this.options.resize.max_size[1],
+				this.options.max_rows - this.resize_initial_row + 1);
 
 		this.resize_min_size_x = (this.resize_wgd.min_size_x || this.options.resize.min_size[0] || 1);
 		this.resize_min_size_y = (this.resize_wgd.min_size_y || this.options.resize.min_size[1] || 1);
