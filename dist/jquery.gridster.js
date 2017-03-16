@@ -289,7 +289,8 @@
           var region = self.detect_overlapping_region(
               player_coords, collider_coords);
 
-            //todo: make this an option
+
+			//todo: make this an option
             if (region === overlapping_region || overlapping_region === 'all') {
 
                 var area_coords = self.calculate_overlapped_area_coords(
@@ -2225,12 +2226,12 @@
 				self.$el.trigger('gridster:dragstop');
 			},
 			drag: throttle(function (event, ui) {
-				self.on_drag.call(self, event, ui);
-				self.$el.trigger('gridster:drag');
+			// 	self.on_drag.call(self, event, ui);
+			// 	self.$el.trigger('gridster:drag');
 			}, 60)
 		});
 
-		//this.drag_api = this.$el.gridDraggable(draggable_options);
+		// this.drag_api = this.$el.gridDraggable(draggable_options);
 		this.drag_api = this.$el.dragg(draggable_options).data('drag');
 	};
 
@@ -2246,7 +2247,7 @@
 			items: '.' + this.options.resize.handle_class,
 			offset_left: this.options.widget_margins[0],
 			container_width: this.container_width,
-			move_element: false,
+			move_element: false,   // if enabled, drag icon will be far away after resize
 			resize: true,
 			limit: this.options.max_cols !== Infinity,
 			scroll_container: this.options.scroll_container,
@@ -2809,97 +2810,6 @@
 		var player_size_x = this.player_grid_data.size_x;
 		var placeholder_cells = this.cells_occupied_by_placeholder;
 		var $gr = this;
-
-
-		//Queue Swaps
-		$overlapped_widgets.each($.proxy(function (i, w) {
-			var $w = $(w);
-			var wgd = $w.coords().grid;
-			var outside_col = placeholder_cells.cols[0] + player_size_x - 1;
-			var outside_row = placeholder_cells.rows[0] + player_size_y - 1;
-			if ($w.hasClass($gr.options.static_class)) {
-				//next iteration
-				return true;
-			}
-			if ($gr.options.collision.wait_for_mouseup && $gr.drag_api.is_dragging){
-				//skip the swap and just 'move' the place holder
-				$gr.placeholder_grid_data.col = to_col;
-				$gr.placeholder_grid_data.row = to_row;
-
-				$gr.cells_occupied_by_placeholder = $gr.get_cells_occupied(
-						$gr.placeholder_grid_data);
-
-				$gr.$preview_holder.attr({
-					'data-row': to_row,
-					'data-col': to_col
-				});
-			} else if (wgd.size_x <= player_size_x && wgd.size_y <= player_size_y) {
-				if (!$gr.is_swap_occupied(placeholder_cells.cols[0], wgd.row, wgd.size_x, wgd.size_y) && !$gr.is_player_in(placeholder_cells.cols[0], wgd.row) && !$gr.is_in_queue(placeholder_cells.cols[0], wgd.row, $w)) {
-					if($gr.options.move_widgets_down_only){
-						$overlapped_widgets.each($.proxy(function (i, w) {
-							var $w = $(w);
-
-							if ($gr.can_go_down($w) && $w.coords().grid.row === $gr.player_grid_data.row && !$gr.is_in_queue($w.coords().grid.col, wgd.row, $w)) {
-								$gr.move_widget_down($w, $gr.player_grid_data.size_y);
-								$gr.set_placeholder(to_col, to_row);
-							}
-						}));
-					}
-					else{
-						swap = $gr.queue_widget(placeholder_cells.cols[0], wgd.row, $w);
-					}
-				}
-				else if (!$gr.is_swap_occupied(outside_col, wgd.row, wgd.size_x, wgd.size_y) && !$gr.is_player_in(outside_col, wgd.row) && !$gr.is_in_queue(outside_col, wgd.row, $w)) {
-					swap = $gr.queue_widget(outside_col, wgd.row, $w);
-				}
-				else if (!$gr.is_swap_occupied(wgd.col, placeholder_cells.rows[0], wgd.size_x, wgd.size_y) && !$gr.is_player_in(wgd.col, placeholder_cells.rows[0]) && !$gr.is_in_queue(wgd.col, placeholder_cells.rows[0], $w)) {
-					swap = $gr.queue_widget(wgd.col, placeholder_cells.rows[0], $w);
-				}
-				else if (!$gr.is_swap_occupied(wgd.col, outside_row, wgd.size_x, wgd.size_y) && !$gr.is_player_in(wgd.col, outside_row) && !$gr.is_in_queue(wgd.col, outside_row, $w)) {
-					swap = $gr.queue_widget(wgd.col, outside_row, $w);
-				}
-				else if (!$gr.is_swap_occupied(placeholder_cells.cols[0], placeholder_cells.rows[0], wgd.size_x, wgd.size_y) && !$gr.is_player_in(placeholder_cells.cols[0], placeholder_cells.rows[0]) && !$gr.is_in_queue(placeholder_cells.cols[0], placeholder_cells.rows[0], $w)) {
-					if($gr.options.move_widgets_down_only){
-						$overlapped_widgets.each($.proxy(function (i, w) {
-							var $w = $(w);
-
-							if ($gr.can_go_down($w) && $w.coords().grid.row === $gr.player_grid_data.row && !$gr.is_in_queue(outside_col, wgd.row, $w)) {
-								$gr.move_widget_down($w, $gr.player_grid_data.size_y);
-								$gr.set_placeholder(to_col, to_row);
-							}
-						}));
-					}
-					else{
-						swap = $gr.queue_widget(placeholder_cells.cols[0], placeholder_cells.rows[0], $w);
-					}
-				} else {
-					//in one last attempt we check for any other empty spaces
-					for (var c = 0; c < player_size_x; c++) {
-						for (var r = 0; r < player_size_y; r++) {
-							var colc = placeholder_cells.cols[0] + c;
-							var rowc = placeholder_cells.rows[0] + r;
-							if (!$gr.is_swap_occupied(colc, rowc, wgd.size_x, wgd.size_y) && !$gr.is_player_in(colc, rowc) && !$gr.is_in_queue(colc, rowc, $w)) {
-								swap = $gr.queue_widget(colc, rowc, $w);
-								c = player_size_x;
-								break;
-							}
-						}
-					}
-
-				}
-			} else if ($gr.options.shift_larger_widgets_down && !swap) {
-				$overlapped_widgets.each($.proxy(function (i, w) {
-					var $w = $(w);
-
-					if ($gr.can_go_down($w) && $w.coords().grid.row === $gr.player_grid_data.row) {
-						$gr.move_widget_down($w, $gr.player_grid_data.size_y);
-						$gr.set_placeholder(to_col, to_row);
-					}
-				}));
-			}
-
-			$gr.clean_up_changed();
-		}));
 
 		//Move queued widgets
 		if (swap && this.can_placeholder_be_set(to_col, to_row, player_size_x, player_size_y)) {
