@@ -152,7 +152,7 @@
     };
 
 
-    /**
+	/**
     * Detects collisions between a DOM element against other DOM elements or
     * Coords objects.
     *
@@ -468,6 +468,10 @@
     }
 
 }(this, function($) {
+
+
+
+
 	'use strict';
     var defaults = {
         items: 'li',
@@ -1745,13 +1749,6 @@
 
 		this.remove_from_gridmap(wgd);
 
-		if (occupied_cols.length) {
-			var cols_to_empty = [
-				new_wgd.col, new_wgd.row, new_wgd.size_x, Math.min(old_size_y, new_wgd.size_y), $widget
-			];
-			this.empty_cells.apply(this, cols_to_empty);
-		}
-
 		if (occupied_rows.length) {
 			var rows_to_empty = [new_wgd.col, new_wgd.row, new_wgd.size_x, new_wgd.size_y, $widget];
 			this.empty_cells.apply(this, rows_to_empty);
@@ -1816,20 +1813,9 @@
 		});
 
 		$nexts.not($exclude).each($.proxy(function (i, w) {
-			var $w = $(w),
-					wgd = $w.coords().grid;
-			/*jshint -W018 */
-			if (!(wgd.row <= (row + size_y - 1))) {
-				return;
-			}
-			/*jshint +W018 */
-			var diff = (row + size_y) - wgd.row;
-			this.move_widget_down($w, diff);
-		}, this));
 
-		if (!this.is_resizing) {
-			this.set_dom_grid_height();
-		}
+			// todo: remove or modify
+		}, this));
 
 		return this;
 	};
@@ -2631,12 +2617,26 @@
 		var size_x = Math.max(1, this.resize_initial_sizex + inc_units_x);
 		var size_y = Math.max(1, this.resize_initial_sizey + inc_units_y);
 
+		let that = this;
+		let widgetBlockAfterCells = this.magicFunction(size_x, size_y, that);
+		// if ($.inArray(col, new_cells_occupied.cols) === -1) {
+		//	
+		// }
+
+		if (widgetBlockAfterCells.cols){
+			// todo: update
+		}
+
+		// if (widgetBlockAfterCells < size_x){
+		// 	size_x = widgetBlockAfterCells;
+		// }
 		// Max number of cols this widget can be in width
 		var max_cols = Math.floor((this.container_width / this.min_widget_width) - this.resize_initial_col + 1);
 
 		var limit_width = (max_cols * this.min_widget_width) + ((max_cols - 1) * margin_x);
 
 		size_x = Math.max(Math.min(size_x, max_size_x), min_size_x);
+
 		size_x = Math.min(max_cols, size_x);
 		width = (max_size_x * wbd_x) + ((size_x - 1) * margin_x );
 		var max_width = Math.min(width, limit_width);
@@ -2673,8 +2673,8 @@
 
 		if (size_x !== this.resize_last_sizex ||
 				size_y !== this.resize_last_sizey) {
-
 			this.resize_widget(this.$resized_widget, size_x, size_y, false);
+
 			this.set_dom_grid_width(this.cols);
 
 			this.$resize_preview_holder.css({
@@ -2688,7 +2688,7 @@
 		}
 
 		if (this.options.resize.resize) {
-			this.options.resize.resize.call(this, event, ui, this.$resized_widget);
+			this.options.resize.resi1ze.call(this, event, ui, this.$resized_widget);
 		}
 
 		this.$el.trigger('gridster:resize');
@@ -2697,7 +2697,100 @@
 		this.resize_last_sizey = size_y;
 	};
 
+	fn.magicFunction = function (size_x, size_y, that)
+	{
+		let widget = this.$resized_widget;
+		var wgd = widget.coords().grid;
 
+		var new_wgd = {
+			col: wgd.col,
+			row: wgd.row,
+			size_x: that.resize_initial_sizex,
+			size_y: that.resize_initial_sizey
+		};
+
+		// var old_cells_occupied = this.get_cells_occupied(wgd);
+		// var new_cells_occupied = this.get_cells_occupied(new_wgd);
+
+		var old_cells_occupied = this.get_cells_occupied(new_wgd);
+		var new_cells_occupied = this.get_cells_occupied(wgd);
+
+		//find the cells that this widget currently occupies
+		var empty_cols = [];
+		$.each(old_cells_occupied.cols, function (i, col) {
+			if ($.inArray(col, new_cells_occupied.cols) === -1) {
+				// todo: check
+				// empty_cols.push(col);
+			}
+		});
+
+		//find the cells that this widget will occupy
+		var occupied_cols = [];
+		$.each(new_cells_occupied.cols, function (i, col) {
+			if ($.inArray(col, old_cells_occupied.cols) === -1) {
+				// if (col >= that.resize_initial_row && col <= (that.resize_initial_row + that.resize_initial_sizex))
+				// {
+				// todo: check
+				occupied_cols.push(col);
+				// }
+			}
+		});
+
+		//find the rows that it currently occupies
+		var empty_rows = [];
+		$.each(old_cells_occupied.rows, function (i, row) {
+			if ($.inArray(row, new_cells_occupied.rows) === -1) {
+				// todo: check
+				// empty_rows.push(row);
+			}
+		});
+
+		//find the rows that it will occupy
+		var occupied_rows = [];
+		$.each(new_cells_occupied.rows, function (i, row) {
+			if ($.inArray(row, old_cells_occupied.rows) === -1) {
+				occupied_rows.push(row);
+			}
+		});
+
+		//only check if new coordinates are overlapping
+		/**
+		 * 1. get new coordinates (col and row) - need them in pairs ...
+		 * 2. check in gridmap if col and row are free
+		 * 2a else return max col
+		 *
+		 */
+
+		let gridmap = this.gridmap;
+
+		$.each(occupied_cols, function(colkey, occup_col){
+			$.each(occupied_rows, function(rowkey, occup_row){
+				// TODO: display current grid
+			});
+		});
+
+		return {cols: occupied_cols, rows: occupied_rows};
+	};
+
+
+	fn.showGridmap = function()
+	{
+		let gridmap = this.gridmap;
+		let gridmapStr = "";
+		$.each(gridmap, function(colkey, colval){
+			gridmapStr = gridmapStr + colkey ;
+			$.each(colval, function(rowkey, rowval){
+				if (typeof rowval === 'undefined')
+				{
+					gridmapStr = gridmapStr + " 1 ";
+				} else {
+					gridmapStr = gridmapStr + " 0 ";
+
+				}
+			});
+			gridmapStr = gridmapStr + " \r\n";
+		});
+	},
 	/**
 	 * Executes the callbacks passed as arguments when a column begins to be
 	 * overlapped or stops being overlapped.
@@ -2710,6 +2803,9 @@
 	 * @return {Gridster} Returns the instance of the Gridster Class.
 	 */
 	fn.on_overlapped_column_change = function (start_callback, stop_callback) {
+			this.showGridmap();
+
+
 		if (!this.colliders_data.length) {
 			return this;
 		}
@@ -3064,7 +3160,6 @@
 					// overlaps player
 					var y = (to_row + this.player_grid_data.size_y) - wgd.row;
 					if (this.can_go_down($w)) {
-						console.log('In Move Down!');
 						this.move_widget_down($w, y);
 						this.set_placeholder(to_col, to_row);
 					}
@@ -3814,11 +3909,6 @@
 				this.$changed = this.$changed.add($widget);
 
 				moved.push($widget);
-
-				/* $next_widgets.each($.proxy(function(i, widget) {
-				 console.log('from_within_move_widget_up');
-				 this.move_widget_up($(widget), y_units);
-				 }, this)); */
 			}
 		});
 
