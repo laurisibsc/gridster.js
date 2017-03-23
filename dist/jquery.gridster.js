@@ -936,6 +936,8 @@
 				max_cols: Infinity,
 				min_rows: 1,
 				max_rows: 15,
+				max_widget_rows: 6,
+				max_widget_cols: 6,
 				autogenerate_stylesheet: true,
 				avoid_overlapped_widgets: true,
 				auto_init: true,
@@ -1836,18 +1838,20 @@
 	 * @return {Gridster} Returns the instance of the Gridster Class.
 	 */
 	fn.remove_empty_cells = function (col, row, size_x, size_y, exclude) {
-		var $nexts = this.widgets_below({
-			col: col,
-			row: row,
-			size_x: size_x,
-			size_y: size_y
-		});
-
-		$nexts.not(exclude).each($.proxy(function(i, widget) {
-			this.move_widget_up( $(widget), size_y );
-		}, this));
-
-		this.set_dom_grid_height();
+		// var $nexts = this.widgets_below({
+		// 	col: col,
+		// 	row: row,
+		// 	size_x: size_x,
+		// 	size_y: size_y
+		// });
+		//
+		// $nexts.not(exclude).each($.proxy(function(i, widget) {
+		// 	console.log("'kretins2");
+		//
+		// 	// this.move_widget_up( $(widget), size_y );
+		// }, this));
+		//
+		// this.set_dom_grid_height();
 
 		return this;
 	};
@@ -2604,36 +2608,113 @@
 		var wbd_y = this.options.widget_base_dimensions[1];
 		var margin_x = this.options.widget_margins[0];
 		var margin_y = this.options.widget_margins[1];
-		var max_size_x = this.resize_max_size_x;
+		var max_size_x = this.resize_max_size_x;			// maximum available columns to right, till grid ends
 		var min_size_x = this.resize_min_size_x;
-		var max_size_y = this.resize_max_size_y;
+		var max_size_y = this.resize_max_size_y;			// maximum available rows down, till grid ends
 		var min_size_y = this.resize_min_size_y;
 		var autogrow = this.options.max_cols === Infinity;
 		var width;
 
-		var inc_units_x = Math.ceil((rel_x / (wbd_x + margin_x * 2)) - 0.2);
-		var inc_units_y = Math.ceil((rel_y / (wbd_y + margin_y * 2)) - 0.2);
+
+		var inc_units_x = Math.ceil((rel_x / (wbd_x + margin_x * 2)) - 0.2);  		// Added columns to widget   -0 === nothing added
+
+		var inc_units_y = Math.ceil((rel_y / (wbd_y + margin_y * 2)) - 0.2);        // Added rows to widget   -0 === nothing added
 
 		var size_x = Math.max(1, this.resize_initial_sizex + inc_units_x);
 		var size_y = Math.max(1, this.resize_initial_sizey + inc_units_y);
 
+		var checkRightForWidget = function(that, inc_units_x)
+		{
+			// I need to know column for grid to check
+			if (inc_units_x > 0)
+			{
+				let initialCol = that.resize_initial_col;
+				let initialRow = that.resize_initial_row;
+
+				let firstOccurance = 0;
+
+				// for each gridmap value Inside column array
+				// check next free value in row
+
+				$.each(that.gridmap, function(key, value){
+					if (key > (that.resize_last_sizex + initialCol))
+					{
+						if (key > initialCol)
+						{
+							if (value[initialRow] !== false)
+							{
+								firstOccurance = key;
+								return false;
+							}
+						}
+					}
+				});
+
+				return firstOccurance - that.resize_initial_col;
+			}
+		};
+
+		var checkDownForWidget = function(that, inc_units_y)
+		{
+			// I need to know column for grid to check
+			if (inc_units_y > 0)
+			{
+				let initialCol = that.resize_initial_col;
+				let initialRow = that.resize_initial_row;
+
+				// for each gridmap value Inside column array
+				// check next free value in row
+
+				let firstOccurance = 0;
+				// Gat furthest coord
+				$.each(that.gridmap[initialCol], function(key, value){
+					// at this gridmap colon, check which rows are occupied already (which are greater then current row)
+					if (key > (that.resize_last_sizey + initialRow))
+					{
+						if (value !== false)
+						{
+							firstOccurance = key;
+							return false;
+						}
+					}
+				});
+
+
+				return firstOccurance - that.resize_initial_row;
+			}
+		}
+
+
+
 		let that = this;
 		let widgetBlockAfterCells = this.magicFunction(size_x, size_y, that);
-		// if ($.inArray(col, new_cells_occupied.cols) === -1) {
-		//	
-		// }
 
 		if (widgetBlockAfterCells.cols){
 			// todo: update
 		}
 
-		// if (widgetBlockAfterCells < size_x){
-		// 	size_x = widgetBlockAfterCells;
-		// }
-		// Max number of cols this widget can be in width
-		var max_cols = Math.floor((this.container_width / this.min_widget_width) - this.resize_initial_col + 1);
+		let maxWidgetCols = checkRightForWidget(this, inc_units_x);
 
+		if (typeof maxWidgetCols !== 'undefined' && maxWidgetCols > 0)
+		{
+			this.options.max_widget_cols = maxWidgetCols;
+		}
+
+		let max_cols = this.options.max_widget_cols;
+
+		// var max_cols = Math.floor((this.container_width / this.min_widget_width) - this.resize_initial_col + 1);
+		let test = checkDownForWidget(this, inc_units_y);
+
+		if (typeof test !== 'undefined' && test > 0)
+		{
+			this.options.max_widget_rows = test;
+		}
+
+		let max_rows = this.options.max_widget_rows;
+
+		// TODO: calculate new height restriction IN PIXELS
 		var limit_width = (max_cols * this.min_widget_width) + ((max_cols - 1) * margin_x);
+		var limit_height = (max_rows * this.min_widget_height) + ((max_rows - 1) * margin_y);
 
 		size_x = Math.max(Math.min(size_x, max_size_x), min_size_x);
 
@@ -2643,7 +2724,9 @@
 		var min_width = (min_size_x * wbd_x) + ((size_x - 1) * margin_x);
 
 		size_y = Math.max(Math.min(size_y, max_size_y), min_size_y);
-		var max_height = (max_size_y * wbd_y) + ((size_y - 1) * margin_y);
+		size_y = Math.min(max_rows, size_y);
+		var height = (max_size_y * wbd_y) + ((size_y - 1) * margin_y);
+		var max_height = Math.min(height, limit_height);
 		var min_height = (min_size_y * wbd_y) + ((size_y - 1) * margin_y);
 
 		if (this.resize_dir.right) {
@@ -2688,7 +2771,7 @@
 		}
 
 		if (this.options.resize.resize) {
-			this.options.resize.resi1ze.call(this, event, ui, this.$resized_widget);
+			this.options.resize.resize.call(this, event, ui, this.$resized_widget);
 		}
 
 		this.$el.trigger('gridster:resize');
