@@ -390,7 +390,6 @@
 		return colliders_data;
 	};
 
-
 	fn.get_closest_colliders = function (player_data_coords)
 	{
 		var colliders = this.find_collisions(player_data_coords);
@@ -1168,7 +1167,7 @@
 					handle_append_to: '',
 					handle_class: 'gs-resize-handle',
 					max_size: [Infinity, Infinity],
-					min_size: [1, 1]
+					min_size: [1, 1],
 				},
 				ignore_self_occupied: false
 			};
@@ -2379,6 +2378,7 @@
 		this.add_to_gridmap(wgd, $el);
 		this.update_widget_dimensions($el, wgd);
 
+
 		this.options.resize.enabled && this.add_resize_handle($el);
 
 		return posChanged;
@@ -2405,6 +2405,7 @@
 			{
 				return this;
 			}
+
 			this.gridmap[col][row] = value;
 		});
 		return this;
@@ -2491,7 +2492,8 @@
 	 */
 	fn.add_to_gridmap = function (grid_data, value)
 	{
-		this.update_widget_position(grid_data, value || grid_data.el);
+			// $(this).text($(this).data('col') + " " + $(this).data('row'));
+		let widgy = this.update_widget_position(grid_data, value || grid_data.el);
 	};
 
 
@@ -2835,6 +2837,7 @@
 	 */
 	fn.on_start_resize = function (event, ui)
 	{
+
 		this.$resized_widget = ui.$player.closest('.gs-w');
 		this.resize_coords = this.$resized_widget.coords();
 		this.resize_wgd = this.resize_coords.grid;
@@ -2938,6 +2941,11 @@
 		{
 			this.drag_api.set_limits(this.cols * this.min_widget_width);
 		}
+
+		$('.gridster li').each(function(){
+			$(this).find('.coords').remove();
+			$(this).html(   $(this).html() + "<p class='coords'>" +  $(this).data('col') + ' - ' + $(this).data('row') + "</p>")
+		});
 	};
 
 
@@ -2950,8 +2958,6 @@
 	 */
 	fn.on_resize = function (event, ui)
 	{
-		// this.options.max_widget_cols = 15;
-
 		var rel_x = (ui.pointer.diff_left);
 		var rel_y = (ui.pointer.diff_top);
 		var wbd_x = this.is_responsive() ? this.get_responsive_col_width() : this.options.widget_base_dimensions[0];
@@ -2964,6 +2970,7 @@
 		var min_size_y = this.resize_min_size_y;
 		var autogrow = this.options.max_cols === Infinity;
 		var width;
+
 
 
 		var inc_units_x = Math.ceil((rel_x / (wbd_x + margin_x * 2)) - 0.2);  		// Added columns to widget   -0 === nothing added
@@ -3012,6 +3019,7 @@
 
 		var checkDownForWidget = function (that, inc_units_y)
 		{
+			// console.log(that.gridmap);
 			// I need to know column for grid to check
 			if (inc_units_y > 0)
 			{
@@ -3052,7 +3060,7 @@
 					});
 				}
 
-				// console.log(" savaktais musurs", that.options.array_of_max_rows);
+
 				that.options.array_of_max_rows = [(Math.min.apply(Math, that.options.array_of_max_rows))];
 
 				// console.log(" savaktais musurs pec", that.options.array_of_max_rows);
@@ -3065,7 +3073,14 @@
 		};
 
 		let that = this;
+
+		/**
+		 * Validate necessity of magic function anymore
+		 * @type {{cols, rows}}
+		 */
 		let widgetBlockAfterCells = this.magicFunction(size_x, size_y, that);
+
+		// console.log();
 
 		let maxWidgetCols = checkRightForWidget(this, inc_units_x);
 
@@ -3086,10 +3101,8 @@
 			this.options.max_widget_rows = test;
 		}
 
-		console.log('final', this.options.max_widget_rows, test);
 		let max_rows = this.options.max_widget_rows;
 
-		console.log('now ', max_rows);
 		// TODO: calculate new height restriction IN PIXELS
 		var limit_width = (max_cols * this.min_widget_width) + ((max_cols - 1) * margin_x);
 		var limit_height = (max_rows * this.min_widget_height) + ((max_rows - 1) * margin_y);
@@ -3336,6 +3349,7 @@
 	 */
 	fn.on_overlapped_row_change = function (start_callback, end_callback)
 	{
+		console.log('overlapped row change');
 		if (!this.colliders_data.length)
 		{
 			return this;
