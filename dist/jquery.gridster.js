@@ -279,7 +279,6 @@
 
 	fn.calculate_overlapped_area_coords = function (a, b)
 	{
-		// console.log('calc area coord', a, b);
 		var x1 = Math.max(a.x1, b.x1);
 		var y1 = Math.max(a.y1, b.y1);
 		var x2 = Math.min(a.x2, b.x2);
@@ -2122,7 +2121,6 @@
 		// });
 		//
 		// $nexts.not(exclude).each($.proxy(function(i, widget) {
-		// 	console.log("'kretins2");
 		//
 		// 	// this.move_widget_up( $(widget), size_y );
 		// }, this));
@@ -2996,7 +2994,6 @@
 						{
 							if (key > initialCol)
 							{
-								// console.log(columnData[i]);
 								if (columnData[i] !== false)
 								{
 									let columnWidth = key - initialCol;
@@ -3019,7 +3016,6 @@
 
 		var checkDownForWidget = function (that, inc_units_y)
 		{
-			// console.log(that.gridmap);
 			// I need to know column for grid to check
 			if (inc_units_y > 0)
 			{
@@ -3045,7 +3041,6 @@
 					 */
 					$.each(that.gridmap[currentCol], function (currentRow, value)
 					{
-						// console.log('currRow', currentRow, value);
 
 						// at this gridmap column, check which rows are occupied already (which are greater then current row)
 						if (currentRow > (that.resize_last_sizey + initialRow))
@@ -3063,7 +3058,6 @@
 
 				that.options.array_of_max_rows = [(Math.min.apply(Math, that.options.array_of_max_rows))];
 
-				// console.log(" savaktais musurs pec", that.options.array_of_max_rows);
 				return that.options.array_of_max_rows;
 			}
 			else
@@ -3080,7 +3074,6 @@
 		 */
 		let widgetBlockAfterCells = this.magicFunction(size_x, size_y, that);
 
-		// console.log();
 
 		let maxWidgetCols = checkRightForWidget(this, inc_units_x);
 
