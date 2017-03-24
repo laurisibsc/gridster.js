@@ -279,6 +279,7 @@
 
 	fn.calculate_overlapped_area_coords = function (a, b)
 	{
+		// console.log('calc area coord', a, b);
 		var x1 = Math.max(a.x1, b.x1);
 		var y1 = Math.max(a.y1, b.y1);
 		var x2 = Math.min(a.x2, b.x2);
@@ -487,6 +488,7 @@
 
 	window.debounce = function (func, wait, immediate)
 	{
+
 		var timeout;
 		return function ()
 		{
@@ -1621,7 +1623,6 @@
 		return this;
 	};
 
-
 	/**
 	 * Change widget size limits.
 	 *
@@ -2422,7 +2423,6 @@
 	 */
 	fn.update_widget_dimensions = function ($widget, wgd)
 	{
-
 		var width = (wgd.size_x * (this.is_responsive() ? this.get_responsive_col_width() : this.options.widget_base_dimensions[0]) +
 		((wgd.size_x - 1) * this.options.widget_margins[0]));
 
@@ -2492,8 +2492,8 @@
 	 */
 	fn.add_to_gridmap = function (grid_data, value)
 	{
-			// $(this).text($(this).data('col') + " " + $(this).data('row'));
-		let widgy = this.update_widget_position(grid_data, value || grid_data.el);
+		// $(this).text($(this).data('col') + " " + $(this).data('row'));
+		 this.update_widget_position(grid_data, value || grid_data.el);
 	};
 
 
@@ -2942,9 +2942,10 @@
 			this.drag_api.set_limits(this.cols * this.min_widget_width);
 		}
 
-		$('.gridster li').each(function(){
+		$('.gridster li').each(function ()
+		{
 			$(this).find('.coords').remove();
-			$(this).html(   $(this).html() + "<p class='coords'>" +  $(this).data('col') + ' - ' + $(this).data('row') + "</p>")
+			$(this).html($(this).html() + "<p class='coords'>" + $(this).data('col') + ' - ' + $(this).data('row') + "</p>")
 		});
 	};
 
@@ -2970,7 +2971,6 @@
 		var min_size_y = this.resize_min_size_y;
 		var autogrow = this.options.max_cols === Infinity;
 		var width;
-
 
 
 		var inc_units_x = Math.ceil((rel_x / (wbd_x + margin_x * 2)) - 0.2);  		// Added columns to widget   -0 === nothing added
@@ -3349,7 +3349,6 @@
 	 */
 	fn.on_overlapped_row_change = function (start_callback, end_callback)
 	{
-		console.log('overlapped row change');
 		if (!this.colliders_data.length)
 		{
 			return this;
@@ -3996,6 +3995,7 @@
 	 */
 	fn.get_widgets_under_player = function (cells)
 	{
+
 		cells || (cells = this.cells_occupied_by_player || {cols: [], rows: []});
 		var $widgets = $([]);
 
@@ -4413,6 +4413,7 @@
 	 */
 	fn.on_stop_overlapping_row = function (row)
 	{
+
 		//this.set_player(false, row);
 		var self = this;
 		var cols = this.cells_occupied_by_player.cols;
@@ -4433,6 +4434,7 @@
 	//Not yet part of api - DM.
 	fn.new_move_widget_to = function ($widget, col, row)
 	{
+
 		var widget_grid_data = $widget.coords().grid;
 
 		this.remove_from_gridmap(widget_grid_data);
