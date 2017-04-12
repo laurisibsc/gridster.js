@@ -1107,9 +1107,9 @@
 				extra_rows: 0,
 				extra_cols: 0,
 				min_cols: 1,
-				max_cols: 15,
+				max_cols: 45,
 				min_rows: 1,
-				max_rows: 15,
+				max_rows: 45,
 				max_widget_rows: 10,
 				max_widget_cols: 10,
 				autogenerate_stylesheet: true,
@@ -1123,6 +1123,8 @@
 				shift_widgets_up: true,
 				array_of_max_cols: [],
 				array_of_max_rows: [],
+				collision_alert: false,
+				widget_before: [],
 				show_element: function ($el, callback)
 				{
 					if (callback)
@@ -1711,9 +1713,8 @@
 			size_x: size_x,
 			size_y: size_y
 		};
-		// console.log(wgd.col, wgd.row, (wgd.col + wgd.size_x), (wgd.row + wgd.size_y));
 		let result = this.get_widgets_in_range(wgd.col, wgd.row, wgd.col + size_x, wgd.row + size_y);
-		console.log(result, size_x, size_y);
+
 
 		this.mutate_widget_in_gridmap($widget, wgd, new_grid_data);
 
@@ -1730,239 +1731,12 @@
 		return $widget;
 	};
 
-	/**
-	 * Expand the widget. Width is set to the current grid width.
-	 *
-	 * @method expand_widget
-	 * @param {HTMLElement} $widget The jQuery wrapped HTMLElement
-	 *  representing the widget.
-	 * @param {Number} size_x The number of cols that will occupy the widget.
-	 * @param {Number} size_y The number of rows that will occupy the widget.
-	 * @param {Number} col The column to resize the widget from.
-	 * @param {Function} [callback] Function executed when the widget is expanded.
-	 * @return {HTMLElement} Returns $widget.
-	 */
-	fn.expand_widget = function ($widget, size_x, size_y, col, callback)
-	{
-		var wgd = $widget.coords().grid;
-		var max_size_x = Math.floor(($(window).width() - this.options.widget_margins[0] * 2) / this.min_widget_width);
-		size_x = size_x || Math.min(max_size_x, this.cols);
-		size_y || (size_y = wgd.size_y);
-
-		var old_size_y = wgd.size_y;
-		$widget.attr('pre_expand_col', wgd.col);
-		$widget.attr('pre_expand_sizex', wgd.size_x);
-		$widget.attr('pre_expand_sizey', wgd.size_y);
-		var new_col = col || 1;
-
-		if (size_y > old_size_y)
-		{
-			this.add_faux_rows(Math.max(size_y - old_size_y, 0));
-		}
-
-		var new_grid_data = {
-			col: new_col,
-			row: wgd.row,
-			size_x: size_x,
-			size_y: size_y
-		};
-
-		this.mutate_widget_in_gridmap($widget, wgd, new_grid_data);
-
-		this.set_dom_grid_height();
-		this.set_dom_grid_width();
-
-		if (callback)
-		{
-			callback.call(this, new_grid_data.size_x, new_grid_data.size_y);
-		}
-
-		return $widget;
-	};
-
-	/**
-	 * Collapse the widget to it's pre-expanded size
-	 *
-	 * @method collapse_widget
-	 * @param {HTMLElement} $widget The jQuery wrapped HTMLElement
-	 *  representing the widget.
-	 * @param {Function} [callback] Function executed when the widget is collapsed.
-	 * @return {HTMLElement} Returns $widget.
-	 */
-	fn.collapse_widget = function ($widget, callback)
-	{
-		var wgd = $widget.coords().grid;
-		var size_x = parseInt($widget.attr('pre_expand_sizex'));
-		var size_y = parseInt($widget.attr('pre_expand_sizey'));
-
-		var new_col = parseInt($widget.attr('pre_expand_col'));
-
-		var new_grid_data = {
-			col: new_col,
-			row: wgd.row,
-			size_x: size_x,
-			size_y: size_y
-		};
-
-		this.mutate_widget_in_gridmap($widget, wgd, new_grid_data);
-
-		this.set_dom_grid_height();
-		this.set_dom_grid_width();
-
-		if (callback)
-		{
-			callback.call(this, new_grid_data.size_x, new_grid_data.size_y);
-		}
-
-		return $widget;
-	};
-
-	/**
-	 * Fit the size of a widget to its content (best guess)
-	 *
-	 * @method fit_to_content
-	 * @param $widget  {HTMLElement} $widget The jQuery wrapped HTMLElement
-	 * @param max_cols {Number} max number of columns a widget can take up
-	 * @param max_rows {Number} max number of rows a widget can take up
-	 * @param {Function} [callback] Function executed when the widget is fit to content.
-	 * @return {HTMLElement} Returns $widget.
-	 */
-	fn.fit_to_content = function ($widget, max_cols, max_rows, callback)
-	{
-		var wgd = $widget.coords().grid;
-		var width = this.$wrapper.width();
-		var height = this.$wrapper.height();
-		var col_size = this.options.widget_base_dimensions[0] + (2 * this.options.widget_margins[0]);
-		var row_size = this.options.widget_base_dimensions[1] + (2 * this.options.widget_margins[1]);
-		var best_cols = Math.ceil((width + (2 * this.options.widget_margins[0])) / col_size);
-		var best_rows = Math.ceil((height + (2 * this.options.widget_margins[1])) / row_size);
-
-		var new_grid_data = {
-			col: wgd.col,
-			row: wgd.row,
-			size_x: Math.min(max_cols, best_cols),
-			size_y: Math.min(max_rows, best_rows)
-		};
-
-		this.mutate_widget_in_gridmap($widget, wgd, new_grid_data);
-
-		this.set_dom_grid_height();
-		this.set_dom_grid_width();
-
-		if (callback)
-		{
-			callback.call(this, new_grid_data.size_x, new_grid_data.size_y);
-		}
-
-		return $widget;
-	};
-
-
-	/**
-	 * Centers widgets in grid
-	 *
-	 * @method center_widgets
-	 */
-	fn.center_widgets = debounce(function ()
-	{
-		var wrapper_width = this.$wrapper.width();
-		var col_size;
-		if (this.is_responsive())
-		{
-			col_size = this.get_responsive_col_width();
-		}
-		else
-		{
-			col_size = this.options.widget_base_dimensions[0] + (2 * this.options.widget_margins[0]);
-		}
-		var col_count = Math.floor(Math.max(Math.floor(wrapper_width / col_size), this.min_col_count) / 2) * 2;
-
-		this.options.min_cols = col_count;
-		this.options.max_cols = col_count;
-		this.options.extra_cols = 0;
-		this.set_dom_grid_width(col_count);
-		this.cols = col_count;
-
-		var col_dif = (col_count - this.prev_col_count) / 2;
-
-		if (col_dif < 0)
-		{
-			if (this.get_min_col() > col_dif * -1)
-			{
-				this.shift_cols(col_dif);
-			}
-			else
-			{
-				this.resize_widget_dimensions(this.options);
-			}
-
-			setTimeout($.proxy(function ()
-			{
-				this.resize_widget_dimensions(this.options);
-			}, this), 0);
-
-		}
-		else if (col_dif > 0)
-		{
-			this.resize_widget_dimensions(this.options);
-
-			setTimeout($.proxy(function ()
-			{
-				this.shift_cols(col_dif);
-			}, this), 0);
-
-		}
-		else
-		{
-			this.resize_widget_dimensions(this.options);
-
-			setTimeout($.proxy(function ()
-			{
-				this.resize_widget_dimensions(this.options);
-			}, this), 0);
-
-		}
-
-		this.prev_col_count = col_count;
-		return this;
-	}, 200);
-
-
 	fn.get_min_col = function ()
 	{
 		return Math.min.apply(Math, this.$widgets.map($.proxy(function (key, widget)
 		{
 			return this.get_cells_occupied($(widget).coords().grid).cols;
 		}, this)).get());
-	};
-
-
-	fn.shift_cols = function (col_dif)
-	{
-		var widgets_coords = this.$widgets.map($.proxy(function (i, widget)
-		{
-			var $w = $(widget);
-			return this.dom_to_coords($w);
-		}, this));
-		widgets_coords = Gridster.sort_by_row_and_col_asc(widgets_coords);
-
-		widgets_coords.each($.proxy(function (i, widget)
-		{
-			var $widget = $(widget.el);
-			var wgd = $widget.coords().grid;
-			var col = parseInt($widget.attr('data-col'));
-
-			var new_grid_data = {
-				col: Math.max(Math.round(col + col_dif), 1),
-				row: wgd.row,
-				size_x: wgd.size_x,
-				size_y: wgd.size_y
-			};
-			setTimeout($.proxy(function ()
-			{
-				this.mutate_widget_in_gridmap($widget, wgd, new_grid_data);
-			}, this), 0);
-		}, this));
 	};
 
 
@@ -1982,6 +1756,7 @@
 
 		var old_cells_occupied = this.get_cells_occupied(wgd);
 		var new_cells_occupied = this.get_cells_occupied(new_wgd);
+
 
 		//find the cells that this widget currently occupies
 		var empty_cols = [];
@@ -2022,7 +1797,17 @@
 				occupied_rows.push(row);
 			}
 		});
+		// && (occupied_cols.length === 0 && occupied_rows.length === 0)
 
+		if (new_wgd.size_x > wgd.size_x || new_wgd.size_y > wgd.size_y)
+		{
+			if (this.gridmap[new_wgd.col + new_wgd.size_x][new_wgd.row + new_wgd.size_y] !== false)
+			{
+				// banResize = true;
+				// this.$el.trigger('gridster:resizestop');
+			}
+
+		}
 		this.remove_from_gridmap(wgd);
 
 		if (occupied_rows.length)
@@ -2037,11 +1822,12 @@
 		wgd.size_x = new_wgd.size_x;
 		wgd.size_y = new_wgd.size_y;
 
+		// if (banResize === false)
+		// {
 		this.add_to_gridmap(new_wgd, $widget);
-
 		$widget.removeClass('player-revert');
-
 		this.update_widget_dimensions($widget, new_wgd);
+		// }
 
 		if (empty_cols.length)
 		{
@@ -2183,7 +1969,6 @@
 
 	fn.remove_by_grid = function (col, row)
 	{
-		console.log('sitas ar izsaucas, remove by grid?');
 		var $w = this.is_widget(col, row);
 		if ($w)
 		{
@@ -2402,19 +2187,21 @@
 	 */
 	fn.update_widget_position = function (grid_data, value)
 	{
-		// console.log(grid_data, value);
 		this.for_each_cell_occupied(grid_data, function (col, row)
 		{
 			if (!this.gridmap[col])
 			{
 				return this;
 			}
-			if (this.gridmap[col][row] !== false)
-			{
-				this.$el.trigger('gridster:resizestop');
-			} else {
-				this.gridmap[col][row] = value;
-			}
+			// if (this.gridmap[col][row] !== false)
+			// {
+			// this.$el.trigger('gridster:resizestop');
+			// } else {
+			// console.log(col, row);
+
+
+			this.gridmap[col][row] = value;
+			// }
 		});
 		return this;
 	};
@@ -2629,6 +2416,11 @@
 		this.$player.addClass('player');
 		this.player_grid_data = this.$player.coords().grid;
 		this.placeholder_grid_data = $.extend({}, this.player_grid_data);
+		// console.log('afterīts ? ', this.placeholder_grid_data);
+		this.options.widget_before = {
+			'PosX': this.placeholder_grid_data.col,
+			'PosY': this.placeholder_grid_data.row,
+		};
 
 		this.set_dom_grid_height(this.$el.height() +
 				(this.player_grid_data.size_y * this.min_widget_height));
@@ -2773,6 +2565,32 @@
 		if (this.placeholder_grid_data.el.coords().grid.col !== this.placeholder_grid_data.col ||
 				this.placeholder_grid_data.el.coords().grid.row !== this.placeholder_grid_data.row)
 		{
+			// console.log(this);
+			let data = {
+				'initial_col': this.placeholder_grid_data.el.coords().grid.col,
+				'initial_row': this.placeholder_grid_data.el.coords().grid.row,
+				'initial_sizex': this.placeholder_grid_data.size_x,
+				'initial_sizey': this.placeholder_grid_data.size_y,
+				'layout_id': $('#button_layout_id').val(),
+				'collection_id': $('#layout_collection_id').val(),
+				'action': 'move',
+				'new_col': this.placeholder_grid_data.col,
+				'new_row': this.placeholder_grid_data.row,
+
+			};
+
+			this.updateButtonPosition(this, data);
+
+			// console.log(
+			// 		'new',
+			// 		this.options.widget_before,
+			// 		this.options.widget_before.PosX,
+			// 		this.options.widget_before.PosY,
+			// 		this.placeholder_grid_data.el.coords().grid.col,
+			// 		this.placeholder_grid_data.el.coords().grid.row
+			// );
+
+
 			this.update_widget_position(this.placeholder_grid_data.el.coords().grid, false);
 
 			// move the cells down if there is an overlap and we are in static mode
@@ -2859,6 +2677,13 @@
 
 		this.resize_initial_row = this.resize_coords.grid.row;
 
+		this.options.widget_before = {
+			'posx': this.resize_initial_col,
+			'posy': this.resize_initial_row,
+			'sizex': this.resize_initial_sizex,
+			'sizey': this.resize_initial_sizey
+		};
+
 
 		this.resize_max_size_x = Math.min(this.resize_wgd.max_size_x || this.options.resize.max_size[0],
 				this.options.max_cols - this.resize_initial_col + 1);
@@ -2906,13 +2731,13 @@
 		/**
 		 * check closest collisions by one step
 		 */
-		// set horizontal limit
+				// set horizontal limit
 		let nextHorizontalPosition = (this.resize_initial_col + this.resize_initial_sizex);  // Without subtracting 1, means it's next position to right
 		let currentRow = this.resize_initial_row;
 		let reservedHorizontalPosition = this.gridmap[nextHorizontalPosition][currentRow];
 		if (reservedHorizontalPosition !== false)
 		{
-			this.resize_max_size_x = this.resize_initial_sizex;
+			// this.resize_max_size_x = this.resize_initial_sizex;
 		}
 
 		// set vertical limit
@@ -2928,51 +2753,78 @@
 		// todo: need to set only if user is doing diogonal movement;
 		if (this.gridmap[currentHorizontalPosition][nextVerticalPosition])
 		{
-			this.resize_max_size_y = this.resize_initial_sizey;
+			// this.resize_max_size_y = this.resize_initial_sizey;
 		}
 
 		if (this.gridmap[nextHorizontalPosition][currentRow])
 		{
-			this.resize_max_size_x = this.resize_initial_sizex;
+			// this.resize_max_size_x = this.resize_initial_sizex;
 		}
 
 
 		this.$el.trigger('gridster:resizestart');
 	};
 
-	fn.catchCollisions = function(col, row, startCol)
+	fn.catchCollisions = function (col, row, startCol)
 	{
-
-		console.log('catching coliisions');
-		return false;
-		// catch collisions
-
-		row = row - 1;
-
-		var ga = this.gridmap;
-
-
-		var cr, max;
-		var matched = [];
-		var trow = row;
-
-		for (trow = row + 1, max = ga[col].length; trow < max; trow++)
-		{
-			if (this.is_widget(col, trow) &&
-					$.inArray(ga[col][trow], matched) === -1
-			)
-			{
-					console.log('collision alert');
-				// this.options.array_of_max_cols = [--col];
-				// this.options.array_of_max_rows = [--trow];
-				return 2;
-				// break;
-				// return true;
-			}
-		}
 
 	}
 
+	/**
+	 * Update button with ajax for backend
+	 */
+	fn.updateButton = function(that, inputData)
+	{
+		$.ajax({
+			type: "POST",
+			url: base_url + '/layout-collections/update-button-location',
+			headers: {
+				'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+			},
+			data: inputData
+		}).done(function (data)
+		{
+			if (data.revert === "false")
+			{
+				toastr.success('SAVEDDD ( Need translation) ');
+			} else {
+				toastr.warning('Failed, reverting');
+				that.doResize(that, that.options.widget_before.sizey, that.options.widget_before.sizex)
+			}
+		})
+				.fail(function (data)
+				{
+					toastr.warning('Failed, reverting');
+					that.doResize(that, that.options.widget_before.sizey, that.options.widget_before.sizex)
+				})
+	};
+
+	fn.updateButtonPosition = function(that, inputData)
+	{
+		// console.log(inputData);
+		$.ajax({
+			type: "POST",
+			url: base_url + '/layout-collections/update-button-location',
+			headers: {
+				'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+			},
+			data: inputData
+		}).done(function (data)
+		{
+			if (data.revert === "false")
+			{
+				toastr.success('SAVEDDD ( Need translation) ');
+			} else {
+				toastr.warning('Failed, reverting');
+				that.doResize(that, that.options.widget_before.sizey, that.options.widget_before.sizex)
+			}
+		})
+				.fail(function (data)
+				{
+					toastr.warning('Failed, reverting');
+					that.doResize(that, that.options.widget_before.sizey, that.options.widget_before.sizex)
+				})
+	}
 	/**
 	 * This function is executed every time a widget stops being resized.
 	 *
@@ -2982,6 +2834,21 @@
 	 */
 	fn.on_stop_resize = function (event, ui)
 	{
+
+		let data = {
+			'initial_col': this.resize_initial_col,
+			'initial_row': this.resize_initial_row,
+			'initial_sizex': this.resize_last_sizex,
+			'initial_sizey': this.resize_last_sizey,
+			'layout_id': $('#button_layout_id').val(),
+			'collection_id': $('#layout_collection_id').val(),
+			'action': 'resize',
+			'old_col': this.options.widget_before.sizex,
+			'old_row': this.options.widget_before.sizey,
+		};
+
+		this.updateButton(this, data);
+
 		this.$resized_widget
 				.removeClass('resizing')
 				.css({
@@ -3055,26 +2922,31 @@
 
 		let that = this;
 
-		let returnedLimits = this.checkRightAndDownResize(this, inc_units_x, inc_units_y);
+		// let returnedLimits = this.checkRightAndDownResize(this, inc_units_x, inc_units_y);
 
 
-		let maxWidgetCols = Math.min.apply(Math, returnedLimits.max_cols);
-		let maxWidgetRows = Math.min.apply(Math, returnedLimits.max_rows);
+		// let maxWidgetCols = Math.min.apply(Math, returnedLimits.max_cols);
+		// let maxWidgetRows = Math.min.apply(Math, returnedLimits.max_rows);
 
-		let max_cols = maxWidgetCols;
-		let max_rows = maxWidgetRows;
+		// maxWidgetCols = 7;
+		// maxWidgetRows = 7;
+		let max_cols = 7;
+		let max_rows = 7;
 
-		this.options.max_widget_cols = max_cols;
-		this.options.max_widget_rows = max_rows;
+		// this.options.max_widget_cols = max_cols;
+		// this.options.max_widget_rows = max_rows;
 
+		/**
+		 * TODO: RESET BACK IF NECESSARY
+		 */
 		if (typeof maxWidgetCols !== 'undefined' && maxWidgetCols > 0)
 		{
-			this.options.max_widget_cols = maxWidgetCols;
+			// this.options.max_widget_cols = maxWidgetCols;
 		}
 
 		if (typeof maxWidgetRows !== 'undefined' && maxWidgetRows > 0)
 		{
-			this.options.max_widget_rows = maxWidgetRows;
+			// this.options.max_widget_rows = maxWidgetRows;
 		}
 
 		// TODO: calculate new height restriction IN PIXELS
@@ -3125,23 +2997,52 @@
 
 		this.$resized_widget.css(css_props);
 
-		if (size_x !== this.resize_last_sizex ||
-				size_y !== this.resize_last_sizey)
+		var resizeCollision = function (that, initialCol, initialRow, colResizedBy, rowResizedBy)
 		{
-			this.resize_widget(this.$resized_widget, size_x, size_y, false);
+			initialCol = that.resize_initial_col + that.resize_initial_sizex - 1;
+			initialRow = that.resize_initial_row;
 
-			this.set_dom_grid_width(this.cols);
 
-			this.$resize_preview_holder.css({
-				'width': '',
-				'height': ''
-			}).attr({
-				'data-row': this.$resized_widget.attr('data-row'),
-				'data-sizex': size_x,
-				'data-sizey': size_y
-			});
+			let lastCol = initialCol + colResizedBy - 1; // Start with next field, don't cry on start col
+			let lastRow = initialRow + rowResizedBy - 1;
+
+
+			for (let col = initialCol; col <= lastCol; col++)
+			{
+				for (let row = initialRow; row <= lastRow; row++)
+				{
+					if ((that.gridmap[col][row] !== false))
+					{
+						if (!(col === initialCol && row === initialRow))
+						{
+							// that.options.collision_alert = true;
+						}
+
+					}
+				}
+			}
+		};
+
+		if ((size_x !== this.resize_last_sizex ||
+				size_y !== this.resize_last_sizey))
+		{
+			/**
+			 * This check is only if resizes larger then it was
+			 */
+			if ((size_x > this.resize_last_sizex || size_y > this.resize_last_sizey))
+			{
+				let startCol = this.resize_initial_col + this.resize_initial_sizex - 1;
+				let startRow = this.resize_initial_row + this.resize_initial_sizey - 1;
+
+				resizeCollision(this, startCol, startRow, size_x, size_y); // This should only check selected fields for overlapping
+			}
 		}
 
+		if (this.options.collision_alert === false)
+		{
+			this.doResize(this, size_y, size_x);
+		}
+		
 		if (this.options.resize.resize)
 		{
 			this.options.resize.resize.call(this, event, ui, this.$resized_widget);
@@ -3151,7 +3052,22 @@
 
 		this.resize_last_sizex = size_x;
 		this.resize_last_sizey = size_y;
+	};
 
+	fn.doResize = function (that, size_y, size_x){
+		// Collision is only with itself, no other widgets are conflicted
+		that.resize_widget(that.$resized_widget, size_x, size_y, false);
+
+		that.set_dom_grid_width(that.cols);
+
+		that.$resize_preview_holder.css({
+			'width': '',
+			'height': ''
+		}).attr({
+			'data-row': that.$resized_widget.attr('data-row'),
+			'data-sizex': size_x,
+			'data-sizey': size_y
+		});
 	};
 
 	fn.checkRightAndDownResize = function (that, inc_units_x, inc_units_y)
@@ -3162,6 +3078,10 @@
 		let initialRow = that.resize_initial_row;
 		let currentMaxRow = that.options.array_of_max_rows; // previous set limit
 		let currentMaxCol = that.options.array_of_max_cols; // previous set limit
+
+		currentMaxRow = [7];
+		currentMaxCol = [7];
+
 
 		let max_cols = [currentMaxCol];
 		let max_rows = [currentMaxRow];
@@ -3177,7 +3097,7 @@
 			/**
 			 * Horizontal
 			 */
-			if (columnKey > initialCol + that.resize_last_sizex -1)
+			if (columnKey > initialCol + that.resize_last_sizex - 1)
 			{
 				// Iterate every column which is larger then current + resize till the end of cols
 				// and where row is larger then initial and lower then resize
@@ -3198,7 +3118,7 @@
 			 * Vertical
 			 */
 			// Check only larger columns then start (initial) column and smaller then user has resized
-			if (columnKey >= initialCol  && columnKey < initialCol + that.resize_last_sizex)
+			if (columnKey >= initialCol && columnKey < initialCol + that.resize_last_sizex)
 			{
 				// Now checking rows, as before check only larger then initial rows
 				for (let iRow = initialRow + that.resize_last_sizey; iRow <= that.options.max_rows; iRow++)
@@ -3207,7 +3127,7 @@
 					if (columnData[iRow] !== false)
 					{
 						maxPossibleRow = (iRow - initialRow);
-						that.options.array_of_max_rows.push(maxPossibleRow);
+						// that.options.array_of_max_rows.push(maxPossibleRow);
 					}
 				}
 			}
@@ -3236,6 +3156,9 @@
 
 		this.options.resize.widget_x_resize_direction = false;
 		this.options.resize.widget_y_resize_direction = false;
+
+		this.options.collision_alert = false;
+		// this.options.resize.collision_alert = false;
 	}
 
 	fn.showGridmap = function ()
@@ -4505,7 +4428,6 @@
 	};
 
 
-
 	/**
 	 * Check if the widget can move to the specified row, else returns the
 	 * upper row possible.
@@ -4637,8 +4559,8 @@
 			{
 				// if (!self.is_player(this) && $.inArray(this, $nexts) === -1)
 				// {
-					// $nexts = $nexts.add(this);
-					// return true; // break
+				// $nexts = $nexts.add(this);
+				// return true; // break
 				// }
 			});
 		});
@@ -4982,9 +4904,7 @@
 			},
 			'for_each/below': function ()
 			{
-				console.log(
-						// this.gridmap[7][7]
-				);
+
 
 
 				for (trow = row + 1, max = ga[col].length; trow < max; trow++)
